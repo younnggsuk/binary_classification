@@ -1,0 +1,12 @@
+# python
+__pycache__/
+.ipynb_checkpoints/
+
+# datasets
+datas/
+
+# train log files
+logs/
+
+# test result files
+results/
