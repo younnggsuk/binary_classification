@@ -1,11 +1,30 @@
-# Classification Backbone
+# Binary Classification
 
-This directory contains the code for training and testing a classification model.
+This directory contains the code for training and testing a binary classification model.
 
 ## Usage
 
-### Training
-To train a classification model, run the following command:
+### 1. GPUs
+
+Before start training, you need to set the number of GPUs in the `train.sh` or `test.sh` file as follows:
+
+```bash
+# 2 GPUs are used (default)
+torchrun --nproc_per_node=2 ...
+
+# 4 GPUs are used
+torchrun --nproc_per_node=4 ...
+```
+
+### 2. Train
+
+Training settings are passed as arguments to the `train.py` file. To see the list of available options, run the following command:
+
+```bash
+$ python train.py --help
+```
+
+To train model with default settings, run the following command:
 
 ```bash
 $ bash train.sh
@@ -17,12 +36,18 @@ All results will be saved in the `logs` directory.
 - Metrics will be saved in the `logs/metrics` directory.
 - Tensorboard logs will be saved in the `logs/tensorboard` directory.
 
-### Testing
+### 3. Test
 
-To test a classification model with CAM, run the following command:
+Testing settings are passed as arguments to the `test.py` file. To see the list of available options, run the following command:
 
 ```bash
-$ bash test.sh
+$ python test.py --help
+```
+
+To test model with default settings, run the following command:
+
+```bash
+$ bash train.sh
 ```
 
 All results will be saved in the `results` directory.

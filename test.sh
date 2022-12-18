@@ -10,4 +10,5 @@ torchrun --nproc_per_node=2 test.py \
     --arch "resnet50" \
     --in_chans 3 \
     --num_classes 2 \
+    --threshold 0.5 \
     --ckpt_path "logs/baseline_resnet50/checkpoints/checkpoint018_best.pth"

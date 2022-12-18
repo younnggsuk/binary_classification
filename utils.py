@@ -144,7 +144,7 @@ def get_train_args_parser():
     """
     Get train arguments parser.
     """
-    parser = argparse.ArgumentParser(description='Classification_Train', add_help=False)
+    parser = argparse.ArgumentParser(description='Classification_Train', add_help=True)
 
     # Model parameters
     parser.add_argument(
@@ -158,11 +158,11 @@ def get_train_args_parser():
     )
     parser.add_argument(
         '--num_classes', default=2, type=int,
-        help="""Number of classes for classification - default 2."""
+        help="""Number of classes to classify - default 2 (for binary classification)."""
     )
     parser.add_argument(
         '--pretrained', default=True, type=bool,
-        help="""Use imagenet pretrained weights - default True."""
+        help="""Whether to use pretrained weights - default True."""
     )
 
     # Training parameters
@@ -172,7 +172,7 @@ def get_train_args_parser():
     )
     parser.add_argument(
         '--early_stop', default=None, type=int,
-        help="""Number of epochs to early stop - default 10."""
+        help="""Number of epochs to early stop."""
     )
     
     # Optimizer parameters
@@ -183,7 +183,7 @@ def get_train_args_parser():
     )
     parser.add_argument(
         '--lr', default=0.001, type=float, 
-        help="""Initial learning rate (default: 0.001)."""
+        help="""Initial learning rate - default 0.001."""
     )
     parser.add_argument(
         '--lr_scheduler', default='linear_warmup_cosine_anneling', type=str,
@@ -249,7 +249,7 @@ def get_test_args_parser():
     """
     Get test arguments parser.
     """
-    parser = argparse.ArgumentParser(description='Classification_Test', add_help=False)
+    parser = argparse.ArgumentParser(description='Classification_Test', add_help=True)
 
     # Model parameters
     parser.add_argument(
@@ -263,15 +263,15 @@ def get_test_args_parser():
     )
     parser.add_argument(
         '--num_classes', default=2, type=int,
-        help="""Number of classes for classification - default 2."""
+        help="""Number of classes to classify - default 2."""
     )
     parser.add_argument(
         '--ckpt_path', default="/path/to/checkpoint.pth", type=str,
         help="""Path to the checkpoint file."""
     )
     parser.add_argument(
-        '--classification_threshold', default=0.5, type=float,
-        help="""Classification threshold for binary classification."""
+        '--threshold', default=None, type=float,
+        help="""Classification threshold (binary classification only) - default None."""
     )
 
     # Data parameters
@@ -289,7 +289,7 @@ def get_test_args_parser():
     )
     parser.add_argument(
         '--batch_size_per_gpu', default=64, type=int,
-        help="""Per-GPU batch-size : number of distinct images loaded on one GPU."""
+        help="""Per-GPU batch-size : number of datas to be loaded on one GPU."""
     )
     parser.add_argument(
         '--num_workers', default=8, type=int,

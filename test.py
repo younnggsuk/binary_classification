@@ -29,7 +29,7 @@ from data import get_dataloader
 from models.grad_cam import CAM
 
 
-def eval_one_epoch_with_save_cam(cam, data_loader, result_dir_cam_correct, result_dir_cam_incorrect, threshold=0.5):
+def eval_one_epoch_with_save_cam(cam, data_loader, result_dir_cam_correct, result_dir_cam_incorrect, threshold=None):
     result_dict = {
         "pred_probs": [],
         "true_labels": [],
@@ -55,8 +55,9 @@ def eval_one_epoch_with_save_cam(cam, data_loader, result_dir_cam_correct, resul
             fig, axes = plt.subplots(1, 3, figsize=(15, 5))
             pred_prob_ = pred_prob_.cpu().detach().numpy()
             true_label_ = true_label_.cpu().detach().numpy()
+            
             plt.suptitle(
-                f"Pred: [{pred_prob_[0]:.3f}, {pred_prob_[1]:.3f}] / True: {true_label_}",
+                f"Pred: {[np.round(prob, 3) for prob in pred_prob_]} / True: {true_label_}",
                 fontsize=20
             )
             
@@ -75,10 +76,17 @@ def eval_one_epoch_with_save_cam(cam, data_loader, result_dir_cam_correct, resul
             plt.tight_layout()
             
             # correctness
-            if int(pred_prob_[1] >= threshold) == np.argmax(true_label_):
-                path = os.path.join(result_dir_cam_correct, os.path.basename(image_path_))
+            if len(pred_prob_) == 2:
+                if int(pred_prob_[1] >= threshold) == np.argmax(true_label_):
+                    path = os.path.join(result_dir_cam_correct, os.path.basename(image_path_))
+                else:
+                    path = os.path.join(result_dir_cam_incorrect, os.path.basename(image_path_))
             else:
-                path = os.path.join(result_dir_cam_incorrect, os.path.basename(image_path_))
+                if torch.argmax(pred_prob_) == np.argmax(true_label_):
+                    path = os.path.join(result_dir_cam_correct, os.path.basename(image_path_))
+                else:
+                    path = os.path.join(result_dir_cam_incorrect, os.path.basename(image_path_))
+            
             plt.savefig(path)
             plt.close(fig)
                 
@@ -251,7 +259,7 @@ def main():
                                                            test_loader, 
                                                            result_dir_cam_correct, 
                                                            result_dir_cam_incorrect, 
-                                                           args.classification_threshold)
+                                                           args.threshold)
     # log metrics
     if utils.is_main_process():
         result_dict = log_one_epoch(

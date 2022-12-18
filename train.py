@@ -334,34 +334,39 @@ def main():
             )
             pd.DataFrame(result_dict, index=[0]).to_csv(os.path.join(log_dir_csv, f"epoch_{epoch:03d}_result.csv"), index=False)
             
+            # checkpoint dict
             save_dict = {
-                'args': args,
                 'epoch': epoch + 1,
                 'best_val_loss': best_val_loss,
+                'best_save_path': best_save_path,
                 'model': model.state_dict(),
                 'optimizer': optimizer.state_dict(),
                 'scheduler': scheduler.state_dict(),
             }
-            # save last checkpoint to resume training
-            last_save_path = os.path.join(log_dir_ckpt, "checkpoint_last.pth")
-            torch.save(save_dict, last_save_path)
-
-            # save best model checkpoint
+            
+            # save best checkpoint
             if args.save_best is not None:
                 if val_epoch_loss < best_val_loss:
                     best_val_loss = val_epoch_loss
                     if best_save_path is not None:
                         os.remove(best_save_path)
                     best_save_path = os.path.join(log_dir_ckpt, f"checkpoint{epoch:03d}_best.pth")
+                    
+                    save_dict["best_val_loss"] = best_val_loss
+                    save_dict["best_save_path"] = best_save_path
                     torch.save(save_dict, best_save_path)
                     print(f"Saved best model at {best_save_path}")
-                    
+            
             # save checkpoint every saveckp_freq epochs
             if (epoch + 1) % args.saveckp_freq == 0:
                 freq_save_path = os.path.join(log_dir_ckpt, f"checkpoint{epoch:03d}.pth")
                 torch.save(save_dict, freq_save_path)
                 print(f"Saved model at {freq_save_path}")
 
+            # save last checkpoint to resume training
+            last_save_path = os.path.join(log_dir_ckpt, "checkpoint_last.pth")
+            torch.save(save_dict, last_save_path)
+            
     print("Done!!\n")
     
 
