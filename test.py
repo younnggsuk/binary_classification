@@ -49,7 +49,7 @@ def eval_one_epoch_with_save_cam(cam, data_loader, result_dir_cam_correct, resul
             original_image = cv2.imread(image_path_, cv2.IMREAD_COLOR)
             original_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
             
-            denorm_image = image_.cpu().numpy().transpose(1, 2, 0) * np.array((0.229, 0.224, 0.225)) + np.array((0.485, 0.456, 0.406))
+            denorm_image = image_.cpu().numpy().transpose(1, 2, 0)[..., :-1]
             denorm_image = (denorm_image * 255.).astype("uint8")
             
             gray_cam_ = cv2.applyColorMap((gray_cam_ * 255.).astype("uint8"), cv2.COLORMAP_JET)
