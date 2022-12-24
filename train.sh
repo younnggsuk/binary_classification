@@ -1,6 +1,6 @@
 #!/bin/bash
 torchrun --nproc_per_node=2 train.py \
-    --exp_name "baseline_resnet50_rgb" \
+    --exp_name "baseline_resnet50_depth" \
     --seed 1111 \
     --root_dir "datas" \
     --log_dir "logs" \
@@ -9,7 +9,7 @@ torchrun --nproc_per_node=2 train.py \
     --batch_size_per_gpu 32 \
     --num_workers 8 \
     --arch "resnet50" \
-    --in_chans 3 \
+    --in_chans 1 \
     --num_classes 2 \
     --optimizer "adamw" \
     --lr_scheduler "linear_warmup_cosine_anneling" \

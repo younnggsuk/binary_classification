@@ -1,6 +1,6 @@
 #!/bin/bash
 torchrun --nproc_per_node=2 test.py \
-    --exp_name "baseline_resnet50_rgb" \
+    --exp_name "baseline_resnet50_depth" \
     --root_dir "datas" \
     --result_dir "results" \
     --data_list_json "datas/data_split.json" \
@@ -8,7 +8,7 @@ torchrun --nproc_per_node=2 test.py \
     --batch_size_per_gpu 16 \
     --num_workers 8 \
     --arch "resnet50" \
-    --in_chans 3 \
+    --in_chans 1 \
     --num_classes 2 \
     --threshold 0.5 \
-    --ckpt_path "logs/baseline_resnet50_rgb/checkpoints/checkpoint_best.pth"
+    --ckpt_path "logs/baseline_resnet50_depth/checkpoints/checkpoint_best.pth"
