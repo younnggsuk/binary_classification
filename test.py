@@ -1,13 +1,11 @@
 import os
-import cv2
 import sys
+import cv2
 import timm
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-
-from PIL import Image
 from tqdm import tqdm
 from datetime import datetime
 
@@ -26,10 +24,14 @@ from torchmetrics.functional.classification import (
 
 import utils
 from data import get_dataloader
+from logger import get_logger
 from models.grad_cam import CAM
 
 
 def eval_one_epoch_with_save_cam(cam, data_loader, result_dir_cam_correct, result_dir_cam_incorrect, threshold=None):
+    """
+    Evaluate model for one epoch with saving CAM.
+    """
     result_dict = {
         "pred_probs": [],
         "true_labels": [],
@@ -44,7 +46,8 @@ def eval_one_epoch_with_save_cam(cam, data_loader, result_dir_cam_correct, resul
         pred_probs = torch.softmax(pred_logits, dim=1)
         
         for image_path_, image_, pred_prob_, true_label_, gray_cam_ in zip(image_paths, images, pred_probs, true_labels, gray_cams):
-            original_image = Image.open(image_path_).convert('RGB')
+            original_image = cv2.imread(image_path_, cv2.IMREAD_COLOR)
+            original_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
             
             denorm_image = image_.cpu().numpy().transpose(1, 2, 0) * np.array((0.229, 0.224, 0.225)) + np.array((0.485, 0.456, 0.406))
             denorm_image = (denorm_image * 255.).astype("uint8")
@@ -100,6 +103,9 @@ def eval_one_epoch_with_save_cam(cam, data_loader, result_dir_cam_correct, resul
 
 
 def log_one_epoch(log_dir_cm, pred_probs, true_labels):
+    """
+    Log metrics and confusion matrices for one epoch.
+    """
     result_dict = {
         "auroc": binary_auroc(pred_probs[:, 1], true_labels),
         "acc_0.1": binary_accuracy(pred_probs[:, 1], true_labels, threshold=0.1),
@@ -220,14 +226,18 @@ def main():
             if not os.path.exists(dir_path):
                 os.makedirs(dir_path)
 
-        # print args
-        print("\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(args)).items())))
+    # get logger
+    logger = get_logger(result_dir, resume="False", is_rank0=utils.is_main_process())
+
+    # print args
+    logger.info("\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(args)).items())))
         
     # load data list
     data_list_dict = utils.load_data_list_from_json(args.data_list_json)
     test_list = data_list_dict["test_list"]
-    print(f"Data size: test {len(test_list)}")
+    logger.info(f"Data size: test {len(test_list)}")
     
+    # test loader
     test_loader = get_dataloader(
         root_dir=args.root_dir,
         data_list=test_list,
@@ -247,14 +257,14 @@ def main():
     model = model.cuda()
     model = nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
     model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
-    utils.load_pretrained_model_weights(model, args.ckpt_path)
+    utils.load_pretrained_model_weights(model, args.ckpt_path, logger)
     model.eval()
     
     # build cam
     cam = CAM(model=model, target_layers=[model.module.layer4[-1]], use_cuda=True)
     
     # test model
-    print("\nStart testing!!")
+    logger.info("\nStart testing!!")
     pred_probs, true_labels = eval_one_epoch_with_save_cam(cam,
                                                            test_loader, 
                                                            result_dir_cam_correct, 
@@ -268,8 +278,7 @@ def main():
             true_labels, 
         )
         pd.DataFrame(result_dict, index=[0]).to_csv(os.path.join(result_dir_csv, f"result.csv"), index=False)
-        
-    print("Done!!\n")
+    logger.info("Done!!\n")
 
 
 if __name__ == '__main__':

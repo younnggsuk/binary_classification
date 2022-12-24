@@ -7,11 +7,14 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-
 from tqdm import tqdm
 from datetime import datetime
 
 import torch
+import torch.nn as nn
+import torch.distributed as dist
+import torch.backends.cudnn as cudnn
+from torch.utils.tensorboard import SummaryWriter
 from torchmetrics.functional.classification import (
     binary_auroc,
     binary_accuracy,
@@ -20,17 +23,17 @@ from torchmetrics.functional.classification import (
     binary_precision,
     binary_confusion_matrix,
 )
-import torch.nn as nn
-import torch.distributed as dist
-import torch.backends.cudnn as cudnn
-from torch.utils.tensorboard import SummaryWriter
 
 import utils
 from data import get_dataloader
+from logger import get_logger
 from models.lr_scheduler import LinearWarmupCosineAnnealingLR
 
 
 def train_one_epoch(model, loss_fn, optimizer, data_loader):
+    """
+    Train model for one epoch.
+    """
     running_loss = 0.0
     
     for images, true_labels, _ in tqdm(data_loader, total=len(data_loader), desc="Train"):
@@ -53,6 +56,9 @@ def train_one_epoch(model, loss_fn, optimizer, data_loader):
 
 
 def eval_one_epoch(model, loss_fn, data_loader):
+    """
+    Evaluate model for one epoch.
+    """
     running_loss = 0.0
     result_dict = {
         "pred_probs":  [],
@@ -82,6 +88,9 @@ def eval_one_epoch(model, loss_fn, data_loader):
 
 
 def log_one_epoch(epoch, result_dict, tb_writer, log_dir_cm, pred_probs, true_labels):
+    """
+    Log metrics and confusion matrices for one epoch.
+    """
     result_dict.update({
         "auroc": binary_auroc(pred_probs[:, 1], true_labels),
         "acc_0.1": binary_accuracy(pred_probs[:, 1], true_labels, threshold=0.1),
@@ -162,7 +171,7 @@ def log_one_epoch(epoch, result_dict, tb_writer, log_dir_cm, pred_probs, true_la
 
 def get_current_lr(optimizer):
     """
-    Get current learning rate from optimizer
+    Get current learning rate from optimizer.
     """
     for param_group in optimizer.param_groups:
         return param_group['lr']
@@ -204,7 +213,7 @@ def main():
     log_dir_cm = os.path.join(log_dir, "confusion_matrix")
     log_dir_csv = os.path.join(log_dir, "log_csv")
     log_dir_ckpt = os.path.join(log_dir, "checkpoints")
-    
+
     if utils.is_main_process():
         for dir_path in [log_dir,
                          log_dir_cm,
@@ -216,15 +225,18 @@ def main():
         # tensorboard setting
         tb_writer = SummaryWriter(os.path.join(log_dir, f"tensorboard"))
         
-        # print args
-        print("\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(args)).items())))
+    # get logger
+    logger = get_logger(log_dir, resume="False", is_rank0=utils.is_main_process())
+        
+    # print args
+    logger.info("\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(args)).items())))
         
     # load data list
     data_list_dict = utils.load_data_list_from_json(args.data_list_json)
     train_list = data_list_dict["train_list"]
     val_list = data_list_dict["val_list"]
     random.shuffle(train_list)
-    print(f"Data size: train {len(train_list)}, val {len(val_list)}")
+    logger.info(f"Data size: train {len(train_list)}, val {len(val_list)}")
     
     # data loaders
     train_loader = get_dataloader(
@@ -286,6 +298,7 @@ def main():
                      "best_save_path": None}
     utils.resume_from_checkpoint(
         ckpt_path=os.path.join(log_dir_ckpt, "checkpoint_last.pth"),
+        logger=logger,
         run_variables=run_variables,
         model=model,
         optimizer=optimizer,
@@ -301,9 +314,9 @@ def main():
         epoch_end = args.early_stop
     
     # start training
-    print("\nStart training!!")
+    logger.info("\nStart training!!")
     for epoch in range(epoch_start, epoch_end):
-        print(f"Epoch: [{epoch:03d}/{epoch_end - 1:03d}]")
+        logger.info(f"Epoch: [{epoch:03d}/{epoch_end - 1:03d}]")
         
         # train model
         model.train()
@@ -315,7 +328,7 @@ def main():
         val_epoch_loss, pred_probs, true_labels = eval_one_epoch(model, loss_fn, val_loader)
         
         # print loss
-        print(f"train loss: {train_epoch_loss:.4f}, val loss: {val_epoch_loss:.4f}")
+        logger.info(f"train loss: {train_epoch_loss:.4f}, val loss: {val_epoch_loss:.4f}")
         
         if utils.is_main_process():
             # log metrics
@@ -350,24 +363,24 @@ def main():
                     best_val_loss = val_epoch_loss
                     if best_save_path is not None:
                         os.remove(best_save_path)
-                    best_save_path = os.path.join(log_dir_ckpt, f"checkpoint{epoch:03d}_best.pth")
+                    best_save_path = os.path.join(log_dir_ckpt, f"checkpoint_best.pth")
                     
                     save_dict["best_val_loss"] = best_val_loss
                     save_dict["best_save_path"] = best_save_path
                     torch.save(save_dict, best_save_path)
-                    print(f"Saved best model at {best_save_path}")
+                    logger.info(f"Saved best model at {best_save_path}")
             
             # save checkpoint every saveckp_freq epochs
             if (epoch + 1) % args.saveckp_freq == 0:
                 freq_save_path = os.path.join(log_dir_ckpt, f"checkpoint{epoch:03d}.pth")
                 torch.save(save_dict, freq_save_path)
-                print(f"Saved model at {freq_save_path}")
+                logger.info(f"Saved model at {freq_save_path}")
 
             # save last checkpoint to resume training
             last_save_path = os.path.join(log_dir_ckpt, "checkpoint_last.pth")
             torch.save(save_dict, last_save_path)
             
-    print("Done!!\n")
+    logger.info("Done!!\n")
     
 
 if __name__ == '__main__':

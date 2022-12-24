@@ -99,10 +99,15 @@ def load_data_list_from_json(json_path):
     return data_list
 
 
-def load_pretrained_model_weights(model, ckpt_path):
+def load_pretrained_model_weights(model, ckpt_path, logger=None):
     """
-    Load pretrained model weights.
+    Load pretrained model weights from checkpoint.
     """
+    
+    # if logger is not None, print to logger
+    if logger:
+        print = logger.info
+    
     if os.path.isfile(ckpt_path):
         print(f'Pretrained weights found at {ckpt_path}')
         model_state_dict = torch.load(ckpt_path, map_location="cpu")["model"]
@@ -112,13 +117,17 @@ def load_pretrained_model_weights(model, ckpt_path):
         print("No pretrained weights found.")
     
     
-def resume_from_checkpoint(ckpt_path, run_variables=None, **kwargs):
+def resume_from_checkpoint(ckpt_path, logger=None, run_variables=None, **kwargs):
     """
     Resume training from checkpoint.
     """
     # if checkpoint is not found, start from scratch
     if not os.path.isfile(ckpt_path):
         return
+    
+    # if logger is not None, print to logger
+    if logger:
+        print = logger.info
     
     # if checkpoint is found, load state dict from checkpoint
     print(f"Found checkpoint at {ckpt_path}")

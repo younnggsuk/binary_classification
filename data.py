@@ -5,7 +5,9 @@ from torchvision import transforms
 
 
 class CustomDataset(torch.utils.data.Dataset):
-    
+    """
+    Custom dataset for binary classification.
+    """
     def __init__(
             self,
             root_dir,

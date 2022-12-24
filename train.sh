@@ -1,6 +1,6 @@
 #!/bin/bash
 torchrun --nproc_per_node=2 train.py \
-    --exp_name "baseline_resnet50" \
+    --exp_name "baseline_resnet50_rgb" \
     --seed 1111 \
     --root_dir "datas" \
     --log_dir "logs" \
@@ -15,6 +15,6 @@ torchrun --nproc_per_node=2 train.py \
     --lr_scheduler "linear_warmup_cosine_anneling" \
     --lr 0.001 \
     --max_epochs 100 \
-    --early_stop 20 \
+    --early_stop 50 \
     --save_best true \
     --saveckp_freq 10

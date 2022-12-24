@@ -16,6 +16,8 @@ torchrun --nproc_per_node=2 ...
 torchrun --nproc_per_node=4 ...
 ```
 
+Specifiying the specific GPUs to use is not supported yet.
+
 ### 2. Train
 
 Training settings are passed as arguments to the `train.py` file. To see the list of available options, run the following command:
@@ -30,11 +32,19 @@ To train model with default settings, run the following command:
 $ bash train.sh
 ```
 
-All results will be saved in the `logs` directory.
-- Checkpoints will be saved in the `logs/checkpoints` directory.
-- Confusion matrices will be saved in the `logs/confusion_matrices` directory.
-- Metrics will be saved in the `logs/metrics` directory.
-- Tensorboard logs will be saved in the `logs/tensorboard` directory.
+Or, you can run the script in the background using `nohup` as follows:
+
+```bash
+$ nohup bash train.sh &
+```
+
+All results will be saved in the `logs/exp_name` directory.  
+(`exp_name` is the name of the experiment you can pass as an argument to the `train.py` file.)
+- Training history will be logged in the `logs/exp_name/train.log` file.
+- Checkpoints will be saved in the `logs/exp_name/checkpoints` directory.
+- Confusion matrices will be saved in the `logs/exp_name/confusion_matrices` directory.
+- Metrics will be saved in the `logs/exp_name/metrics` directory.
+- Tensorboard logs will be saved in the `logs/exp_name/tensorboard` directory.
 
 ### 3. Test
 
@@ -47,10 +57,18 @@ $ python test.py --help
 To test model with default settings, run the following command:
 
 ```bash
-$ bash train.sh
+$ bash test.sh
 ```
 
-All results will be saved in the `results` directory.
-- CAMs will be saved in the `results/cams` directory.
-- Confusion matrices will be saved in the `results/confusion_matrices` directory.
-- Metrics will be saved in the `results/metrics` directory.
+Or, you can run the script in the background using `nohup` as follows:
+
+```bash
+$ nohup bash test.sh &
+```
+
+All results will be saved in the `results/exp_name` directory.  
+(`exp_name` is the name of the experiment you can pass as an argument to the `test.py` file.)
+- Testing history will be logged in the `results/exp_name/test.log` file.
+- CAMs will be saved in the `results/exp_name/cams` directory.
+- Confusion matrices will be saved in the `results/exp_name/confusion_matrices` directory.
+- Metrics will be saved in the `results/exp_name/metrics` directory.

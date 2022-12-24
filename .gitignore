@@ -3,10 +3,15 @@ __pycache__/
 .ipynb_checkpoints/
 
 # datasets
-datas/
+datas/color/
+datas/depth/
+datas/labels.csv
 
 # train log files
 logs/
 
 # test result files
 results/
+
+# nohup log files
+nohup.out
